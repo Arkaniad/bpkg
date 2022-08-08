@@ -17,9 +17,9 @@ TMPDIR=${TMPDIR:-/tmp}
 DEST=${DEST:-$TMPDIR/bpkg-$BRANCH}
 
 ## test if command exists
-ftest () {
+ftest() {
   echo "  info: Checking for $1..."
-  if ! type -f "$1" > /dev/null 2>&1; then
+  if ! type -f "$1" >/dev/null 2>&1; then
     return 1
   else
     return 0
@@ -27,7 +27,7 @@ ftest () {
 }
 
 ## feature tests
-features () {
+features() {
   for f in "${@}"; do
     ftest "$f" || {
       echo >&2 "  error: Missing \`$f'! Make sure it exists and try again."
@@ -38,7 +38,7 @@ features () {
 }
 
 ## main setup
-setup () {
+setup() {
   echo "  info: Welcome to the 'bpkg' installer!"
   ## test for require features
   features git || return $?
@@ -52,7 +52,7 @@ setup () {
     rm -rf "$DEST"
 
     echo "  info: Fetching 'bpkg@$BRANCH'..."
-    git clone --depth=1 --branch "$BRANCH" "$REMOTE" "$DEST" > /dev/null 2>&1
+    git clone --depth=1 --branch "$BRANCH" "$REMOTE" "$DEST" >/dev/null 2>&1
     cd "$DEST" || exit
 
     echo "  info: Installing..."
@@ -90,8 +90,10 @@ CMDS+=("term")
 CMDS+=("update")
 CMDS+=("utils")
 CMDS+=("realpath")
+CMDS+=("url")
+CMDS+=("logging")
 
-make_install () {
+make_install() {
   local source
 
   ## do 'make uninstall'
@@ -122,7 +124,7 @@ make_install () {
   return $?
 }
 
-make_uninstall () {
+make_uninstall() {
   echo "  info: Uninstalling $PREFIX/bin/$BIN*"
   echo "    rm: $PREFIX/bin/$BIN'"
   rm -f "$PREFIX/bin/$BIN"
@@ -135,7 +137,7 @@ make_uninstall () {
   return $?
 }
 
-make_link () {
+make_link() {
   make_uninstall
   echo "  info: Linking $PREFIX/bin/$BIN*"
   echo "  link: '$PWD/$BIN' -> '$PREFIX/bin/$BIN'"
@@ -149,7 +151,7 @@ make_link () {
   return $?
 }
 
-make_unlink () {
+make_unlink() {
   make_uninstall
 }
 

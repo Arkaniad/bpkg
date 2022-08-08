@@ -7,6 +7,14 @@ else
   source "$(which bpkg-logging)"
 fi
 
+if ! type -f bpkg-url &>/dev/null; then
+  echo "error: bpkg-url not found, aborting"
+  exit 1
+else
+  # shellcheck source=lib/url/url.sh
+  source "$(which bpkg-url)"
+fi
+
 if ! type -f bpkg-realpath &>/dev/null; then
   echo "error: bpkg-realpath not found, aborting"
   exit 1
@@ -75,47 +83,6 @@ save_remote_file() {
     curl --silent -L -o "$path" -u "$auth_param" "$url"
   else
     curl --silent -L -o "$path" "$url"
-  fi
-
-  return $?
-}
-
-url_exists() {
-  local auth_param exists status url
-
-  url="$1"
-  auth_param="${2:-}"
-
-  exists=0
-
-  if [[ "$auth_param" ]]; then
-    status=$(curl --silent -L -w '%{http_code}' -o '/dev/null' -u "$auth_param" "$url")
-    result="$?"
-  else
-    status=$(curl --silent -L -w '%{http_code}' -o '/dev/null' "$url")
-    result="$?"
-  fi
-
-  # In some rare cases, curl will return CURLE_WRITE_ERROR (23) when writing
-  # to `/dev/null`. In such a case we do not care that such an error occured.
-  # We are only interested in the status, which *will* be available regardless.
-  if [[ '0' != "$result" && '23' != "$result" ]] || ((status >= 400)); then
-    exists=1
-  fi
-
-  return "$exists"
-}
-
-fetch() {
-  local auth_param url
-
-  url="$1"
-  auth_param="${2:-}"
-
-  if [[ "$auth_param" ]]; then
-    curl --silent -L -u "$auth_param" "$url"
-  else
-    curl --silent -L "$url"
   fi
 
   return $?
@@ -305,7 +272,7 @@ bpkg_install_from_remote() {
   ## error since the user may have intended to install the package
   ## from the broken remote.
   {
-    if ! url_exists "$remote" "$auth_param"; then
+    if ! bpkg_url_exists "$remote" "$auth_param"; then
       bpkg_error "Remote unreachable: $remote"
       return 2
     fi
@@ -315,21 +282,21 @@ bpkg_install_from_remote() {
   url="$remote/$uri"
   local nonce="$(date +%s)"
 
-  if url_exists "$url/bpkg.json?$nonce" "$auth_param"; then
+  if bpkg_url_exists "$url/bpkg.json?$nonce" "$auth_param"; then
     ## read 'bpkg.json'
-    json=$(fetch "$url/bpkg.json?$nonce" "$auth_param")
+    json=$(bpkg_read_package_json "$url/bpkg.json?$nonce" "$auth_param")
     package_file='bpkg.json'
     has_pkg_json=1
-  elif url_exists "$url/package.json?$nonce" "$auth_param"; then
+  elif bpkg_url_exists "$url/package.json?$nonce" "$auth_param"; then
     ## read 'package.json'
-    json=$(fetch "$url/package.json?$nonce" "$auth_param")
+    json=$(bpkg_read_package_json "$url/package.json?$nonce" "$auth_param")
     package_file='package.json'
     has_pkg_json=1
   fi
 
   if ((0 == has_pkg_json)); then
     ## check to see if there's a Makefile. If not, this is not a valid package
-    if ! url_exists "$url/Makefile?$nonce" "$auth_param"; then
+    if ! bpkg_url_exists "$url/Makefile?$nonce" "$auth_param"; then
       bpkg_warn "Makefile not found, skipping remote: $url"
       return 1
     fi
