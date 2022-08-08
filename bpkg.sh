@@ -10,41 +10,41 @@ fi
 VERSION="1.1.3"
 
 ## output error to stderr
-error () {
+error() {
   printf >&2 "error: %s\n" "${@}"
 }
 
 ## output usage
-usage () {
+usage() {
   echo ""
   echo "  usage: bpkg [-hV] <command> [args]"
   echo ""
 }
 
 ## commands
-commands () {
+commands() {
   bpkg-suggest 'bpkg-' 2>/dev/null |
-    tail -n+2                      |
-    sed 's/.*\/bpkg-//g'           |
-    sort -u                        |
+    tail -n+2 |
+    sed 's/.*\/bpkg-//g' |
+    sort -u |
     tr '\n' ' '
   return $?
 }
 
 ## feature tests
-features () {
+features() {
   local features
   declare -a features=(bpkg-json bpkg-suggest)
   for ((i = 0; i < ${#features[@]}; ++i)); do
     local f="${features[$i]}"
-    if ! type "${f}"  > /dev/null 2>&1; then
-      error "Missing \"${f}\" dependency"
+    if ! type "${f}" >/dev/null 2>&1; then
+      bpkg_error "Missing \"${f}\" dependency"
       return 1
     fi
   done
 }
 
-bpkg () {
+bpkg() {
   local arg="$1"
   local cmd=""
   shift
@@ -54,62 +54,62 @@ bpkg () {
 
   case "${arg}" in
 
-    ## flags
-    -V|--version)
-      echo "${VERSION}"
-      return 0
-      ;;
+  ## flags
+  -V | --version)
+    echo "${VERSION}"
+    return 0
+    ;;
 
-    -h|--help)
+  -h | --help)
+    usage
+    echo
+    echo "Here are some commands available in your path:"
+    echo
+    local cmds=($(commands))
+    for cmd in "${cmds[@]}"; do
+      echo "    ${cmd}"
+    done
+    return 0
+    ;;
+
+  *)
+    if [ -z "${arg}" ]; then
       usage
-      echo
-      echo "Here are some commands available in your path:"
-      echo
-      local cmds=($(commands))
-      for cmd in "${cmds[@]}"; do
-        echo "    ${cmd}"
-      done
-      return 0
-      ;;
+      return 1
+    fi
+    cmd="bpkg-${arg}"
+    if type -f "${cmd}" >/dev/null 2>&1; then
+      "${cmd}" "${@}"
+      return $?
+    else
+      echo >&2 "error: \`${arg}' is not a bpkg command."
+      {
+        local res
+        declare -a res=($(commands))
 
-    *)
-      if [ -z "${arg}" ]; then
-        usage
-        return 1
-      fi
-      cmd="bpkg-${arg}"
-      if type -f "${cmd}" > /dev/null 2>&1; then
-        "${cmd}" "${@}"
-        return $?
-      else
-        echo >&2 "error: \`${arg}' is not a bpkg command."
-        {
-          local res
-          declare -a res=($(commands))
-
-          if [ -n "${res[*]}" ]; then
-            echo
-            echo  >&2 "Did you mean one of these?"
-            found=0
-            for r in "${res[@]}"; do
-              if [[ "$r" == *"${arg}"* ]]; then
-                echo "     $ bpkg ${r}"
-                found=1
-              fi
-            done
-            if [ "$found" == "0" ]; then
-              for r in "${res[@]}"; do
-                echo "     $ bpkg ${r}"
-              done
+        if [ -n "${res[*]}" ]; then
+          echo
+          echo >&2 "Did you mean one of these?"
+          found=0
+          for r in "${res[@]}"; do
+            if [[ "$r" == *"${arg}"* ]]; then
+              echo "     $ bpkg ${r}"
+              found=1
             fi
-            return 1
-          else
-            usage
-            return 1
+          done
+          if [ "$found" == "0" ]; then
+            for r in "${res[@]}"; do
+              echo "     $ bpkg ${r}"
+            done
           fi
-        }
-      fi
-      ;;
+          return 1
+        else
+          usage
+          return 1
+        fi
+      }
+    fi
+    ;;
 
   esac
   usage

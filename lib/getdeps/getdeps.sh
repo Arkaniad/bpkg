@@ -1,30 +1,38 @@
 #!/usr/bin/env bash
 
+if ! type -f bpkg-logging &>/dev/null; then
+  echo "error: bpkg-logging not found, aborting"
+  exit 1
+else
+  # shellcheck source=lib/logging/logging.sh
+  source "$(which bpkg-logging)"
+fi
+
 ## output usage
-usage () {
+usage() {
   echo "Installs dependencies for a package."
   echo "usage: bpkg-getdeps [-h|--help]"
   echo "   or: bpkg-getdeps"
 }
 
 ## Read a package property
-bpkg_getdeps () {
+bpkg_getdeps() {
   local cwd="$(pwd)"
   local pkg="${cwd}/bpkg.json"
 
   ## parse flags
   case "$1" in
-    -h|--help)
-      usage
-      return 0
-      ;;
+  -h | --help)
+    usage
+    return 0
+    ;;
   esac
 
   ## ensure there is a package to read
   if ! test -f "${pkg}"; then
     pkg="${cwd}/package.json"
     if ! test -f "${pkg}"; then
-      echo 1>&2 "error: Unable to find \`bpkg.json' or \`package.json' in $cwd"
+      bpkg_error "error: Unable to find \`bpkg.json' or \`package.json' in $cwd"
       return 1
     fi
   fi
@@ -35,7 +43,7 @@ bpkg_getdeps () {
   dependencies=(${dependencies[@]})
 
   ## run bpkg install for each dependency
-  for (( i = 0; i < ${#dependencies[@]} ; ++i )); do
+  for ((i = 0; i < ${#dependencies[@]}; ++i)); do
     (
       local package=${dependencies[$i]}
       bpkg install "${package}"

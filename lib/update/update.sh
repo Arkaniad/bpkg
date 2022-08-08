@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+if ! type -f bpkg-logging &>/dev/null; then
+  echo "error: bpkg-logging not found, aborting"
+  exit 1
+else
+  # shellcheck source=lib/logging/logging.sh
+  source "$(which bpkg-logging)"
+fi
+
 if ! type -f bpkg-utils &>/dev/null; then
   echo "error: bpkg-utils not found, aborting"
   exit 1
@@ -10,7 +18,7 @@ fi
 
 bpkg_initrc
 
-usage () {
+usage() {
   echo "bpkg-update [-h] [-V]"
   echo
   echo "Update local bpkg index for listing and searching packages"
@@ -37,26 +45,26 @@ bpkg_update_remote() {
   fi
 
   #echo "curl -slo- $auth '$wiki_url' | grep -o '\[.*\](.*).*'"
-  repo_list=$(curl -sLo- "$auth" "$wiki_url" | grep -o '\[.*\](.*).*' | sed 's/\[\(.*\)\](.*)[ \-]*/\1|/' )
+  repo_list=$(curl -sLo- "$auth" "$wiki_url" | grep -o '\[.*\](.*).*' | sed 's/\[\(.*\)\](.*)[ \-]*/\1|/')
 
   num_repos=$(echo "$repo_list" | wc -l | tr -d ' ')
   bpkg_info "indexing ${num_repos} repos from $BPKG_REMOTE_HOST to $index_file"
-  echo "$repo_list" > "$index_file"
+  echo "$repo_list" >"$index_file"
 }
 
-bpkg_update () {
+bpkg_update() {
   for opt in "${@}"; do
     case "$opt" in
-      -h|--help)
-        usage
-        return 0
-        ;;
-      *)
-        if [ "${opt:0:1}" == '-' ]; then
-          bpkg_error "unknown option: $opt"
-          return 1
-        fi
-        ;;
+    -h | --help)
+      usage
+      return 0
+      ;;
+    *)
+      if [ "${opt:0:1}" == '-' ]; then
+        bpkg_error "unknown option: $opt"
+        return 1
+      fi
+      ;;
     esac
   done
 
@@ -65,7 +73,7 @@ bpkg_update () {
   for remote in "${BPKG_REMOTES[@]}"; do
     local git_remote=${BPKG_GIT_REMOTES[$i]}
     bpkg_update_remote "$remote" "$git_remote"
-    i=$((i+1))
+    i=$((i + 1))
   done
 }
 

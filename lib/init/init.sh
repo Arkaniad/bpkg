@@ -1,49 +1,50 @@
 #!/usr/bin/env bash
 
 ## sets optional variable from environment
-opt () { eval "if [ -z \"\$$1\" ]; then $1='$2'; fi";  }
+opt() { eval "if [ -z \"\$$1\" ]; then $1='$2'; fi"; }
 
 ## output usage
-usage () {
+usage() {
   echo ""
   echo "  usage: bpkg-init [-hV]"
   echo ""
 }
 
 ## prompt with question and store result in variable
-prompt () {
+prompt() {
   local var="$1"
   local q="$2"
   local value=""
 
   {
     trap "exit -1" SIGINT SIGTERM
-    read -p "$q" -r -e value;
+    read -p "$q" -r -e value
 
-    value="${value//\"/\'}";
+    value="${value//\"/\'}"
   } 2>&1
   if [ -n "$value" ]; then
     eval "$var=\"$value\""
   fi
 }
 
-prompt_if () {
+prompt_if() {
   local mesg="$1"
   local func="$2"
   prompt ANSWER "$mesg [y/n]: "
   case "$ANSWER" in
-    y|Y|yes|YES|Yes)
-      shift
-      shift
-      # shellcheck disable=SC2068
-      $func $@
-      return 0
+  y | Y | yes | YES | Yes)
+    shift
+    shift
+    # shellcheck disable=SC2068
+    $func $@
+    return 0
+    ;;
   esac
   return 1
 }
 
 ## alert user of hint
-hint () {
+hint() {
   {
     echo
     printf "  hint: %s\n" "$@"
@@ -52,33 +53,33 @@ hint () {
 }
 
 ## output error
-error () {
+error() {
   {
     printf "error: %s\n" "${@}"
   } >&2
 }
 
 ## append line to buffer
-append () {
+append() {
   appendf '%s' "${@}"
   buf+=$'\n'
 }
 
 ## append formatted string to buffer
-appendf () {
+appendf() {
   local fmt="$1"
   shift
   # shellcheck disable=SC2059
- buf+="$(printf "${fmt}" "${@}")"
+  buf+="$(printf "${fmt}" "${@}")"
 }
 
 ## wraps each argument in quotes
-wrap () {
-  printf '"%s" ' "${@}";
-  echo "";
+wrap() {
+  printf '"%s" ' "${@}"
+  echo ""
 }
 
-intro () {
+intro() {
   echo
   echo "This will walk you through initializing the 'bpkg.json' file."
   echo "It will prompt you for the bare minimum that is needed and provide"
@@ -92,7 +93,7 @@ intro () {
   echo
 }
 
-options () {
+options() {
   opt NAME "$(basename "$(pwd)")"
   opt VERSION "0.1.0"
   opt DESCRIPTION ""
@@ -101,12 +102,12 @@ options () {
   opt SCRIPTS "${NAME}.sh"
 }
 
-set_global () {
+set_global() {
   # shellcheck disable=SC2034
   GLOBAL=1
 }
 
-prompts () {
+prompts() {
   prompt NAME "name: (${NAME}) "
   # shellcheck disable=SC2153
   prompt VERSION "version: (${VERSION}) "
@@ -118,20 +119,19 @@ prompts () {
 }
 
 ## handle required fields
-required () {
-  for key in  \
-    "NAME"    \
-    "SCRIPTS"
-  do
+required() {
+  for key in \
+    "NAME" \
+    "SCRIPTS"; do
     eval local val="\${${key}}"
     # shellcheck disable=SC2154
-    [ -z "${val}" ] && error "Missing \`
+    [ -z "${val}" ] && bpkg_error "Missing \`
     ${key}' property"
   done
 }
 
 ## convert scripts to quoted csv
-csv () {
+csv() {
   if [ -n "${SCRIPTS}" ]; then
     RAW_SCRIPTS=${SCRIPTS}
     {
@@ -142,9 +142,9 @@ csv () {
       SCRIPTS=($(wrap "${SCRIPTS}"))
       # shellcheck disable=2219
       let len=${#SCRIPTS[@]}
-      for (( i = 0; i < len; i++ )); do
+      for ((i = 0; i < len; i++)); do
         word=${SCRIPTS[$i]}
-        if (( i + 1 != len )); then
+        if ((i + 1 != len)); then
           TMP+="${word}, "
         else
           TMP+="${word}"
@@ -156,19 +156,18 @@ csv () {
 }
 
 ## delimit object and key-value pairs
-delimit () {
+delimit() {
   local lowercase
 
   append "{"
 
-  for key in      \
-    "NAME"        \
-    "VERSION"     \
+  for key in \
+    "NAME" \
+    "VERSION" \
     "DESCRIPTION" \
-    "GLOBAL"      \
-    "INSTALL"     \
-    "SCRIPTS"
-  do
+    "GLOBAL" \
+    "INSTALL" \
+    "SCRIPTS"; do
     lowercase="$(echo ${key} | tr '[:upper:]' '[:lower:]')"
 
     eval local val="\${${key}}"
@@ -193,7 +192,7 @@ delimit () {
 }
 
 ## validate completed contents with user
-validate () {
+validate() {
   prompt ANSWER "${buf} Does this look OK? (type 'n' to cancel) "
   if [ "n" = "${ANSWER:0:1}" ]; then
     exit 1
@@ -201,15 +200,15 @@ validate () {
 }
 
 ## if package file already exists, ensure user wants to clobber
-clobber () {
+clobber() {
   if test -f "${file}"; then
     prompt_if "A 'bpkg.json' already exists. Would you like to replace it?" rm -f "${file}"
   fi
 }
 
-create_shell_file () {
+create_shell_file() {
   if [ "${NAME}.sh" == "${RAW_SCRIPTS}" ] && [ ! -f "${NAME}.sh" ]; then
-      cat << EOF > "${NAME}.sh"
+    cat <<EOF >"${NAME}.sh"
 #!/bin/bash
 
 VERSION=${VERSION}
@@ -251,7 +250,7 @@ EOF
   fi
 }
 
-create_readme () {
+create_readme() {
   if [ ! -f "README.md" ]; then
     {
       echo "# $NAME"
@@ -264,11 +263,11 @@ create_readme () {
       echo '```sh'
       echo "bpkg install [-g] ${USER:-bpkg}/$NAME"
       echo '```'
-    } > "README.md"
+    } >"README.md"
   fi
 }
 
-create_repo () {
+create_repo() {
   if git status &>/dev/null; then
     echo "Repo already exists"
   else
@@ -277,36 +276,36 @@ create_repo () {
 }
 
 ## main
-bpkg_init () {
+bpkg_init() {
   local cwd
 
   local version="0.1.0"
   cwd="$(pwd)"
-  local buf="" ## output buffer
+  local buf=""                  ## output buffer
   local file="${cwd}/bpkg.json" ## output file
   local arg="$1"
   shift
 
   case "${arg}" in
 
-    ## flags
-    -V|--version)
-      echo "${version}"
-      exit 0
-      ;;
+  ## flags
+  -V | --version)
+    echo "${version}"
+    exit 0
+    ;;
 
-    -h|--help)
+  -h | --help)
+    usage
+    exit 0
+    ;;
+
+  *)
+    if [ -n "${arg}" ]; then
+      bpkg_error "Unknown option: \`${arg}'"
       usage
-      exit 0
-      ;;
-
-    *)
-      if [ -n "${arg}" ]; then
-        error "Unknown option: \`${arg}'"
-        usage
-        exit 1
-      fi
-      ;;
+      exit 1
+    fi
+    ;;
   esac
 
   ## set up package file
@@ -321,7 +320,7 @@ bpkg_init () {
 
   ## create and write package file
   touch "${file}"
-  echo "${buf}" > "${file}"
+  echo "${buf}" >"${file}"
 
   create_shell_file
   create_readme

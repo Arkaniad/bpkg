@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+if ! type -f bpkg-logging &>/dev/null; then
+  echo "error: bpkg-logging not found, aborting"
+  exit 1
+else
+  # shellcheck source=lib/logging/logging.sh
+  source "$(which bpkg-logging)"
+fi
+
 if ! type -f bpkg-utils &>/dev/null; then
   echo "error: bpkg-utils not found, aborting"
   exit 1
@@ -19,7 +27,7 @@ fi
 
 bpkg_initrc
 
-usage () {
+usage() {
   mesg=$1
   if [ "$mesg" != "" ]; then
     echo "$mesg"
@@ -41,7 +49,7 @@ usage () {
   echo "  -h,--help     Print this help dialogue"
 }
 
-show_package () {
+show_package() {
   local pkg=$1
   local desc=$2
   local show_readme=$3
@@ -65,7 +73,7 @@ show_package () {
   fi
 
   json=$(eval "curl $auth -sL '$uri/bpkg.json?$nonce'" 2>/dev/null)
-  if [ "${json}" = '404: Not Found' ];then
+  if [ "${json}" = '404: Not Found' ]; then
     json=$(eval "curl $auth -sL '$uri/package.json?$nonce'" 2>/dev/null)
   fi
 
@@ -82,7 +90,7 @@ show_package () {
   version=$(echo "$json" | bpkg-json -b | grep '"version"' | sed 's/.*version"\]\s*//' | tr -d '\t' | tr -d '"')
   author=$(echo "$json" | bpkg-json -b | grep '"author"' | sed 's/.*author"\]\s*//' | tr -d '\t' | tr -d '"')
   pkg_desc=$(echo "$json" | bpkg-json -b | grep '"description"' | sed 's/.*description"\]\s*//' | tr -d '\t' | tr -d '"')
-  sources=$(echo "$json" | bpkg-json -b | grep '"scripts"' | cut -f 2 | tr -d '"' )
+  sources=$(echo "$json" | bpkg-json -b | grep '"scripts"' | cut -f 2 | tr -d '"')
   install_sh=$(echo "$json" | bpkg-json -b | grep '"install"' | sed 's/.*install"\]\s*//' | tr -d '\t' | tr -d '"')
 
   if [ "$pkg_desc" != "" ]; then
@@ -114,7 +122,7 @@ show_package () {
     for src in $sources; do
       local content http_code
       http_code=$(eval "curl $auth -sL '$uri/$src?$(date +%s)' -w '%{http_code}' -o /dev/null")
-      if (( http_code < 400 )); then
+      if ((http_code < 400)); then
         content=$(eval "curl $auth -sL '$uri/$src?$(date +%s)'")
         echo "#[$src]"
         echo "$content"
@@ -127,39 +135,39 @@ show_package () {
   fi
 }
 
-
-bpkg_show () {
+bpkg_show() {
   local readme=0
   local sources=0
   local pkg=""
   for opt in "$@"; do
     case "$opt" in
-      -h|--help)
-        usage
-        return 0
-        ;;
-      readme)
-        readme=1
-        if [ "$sources" == "1" ]; then
-          usage "Error: readme and sources are mutually exclusive options"
-          return 1
-        fi
-        ;;
-      source|sources)
-        sources=1
-        if [ "$readme" == "1" ]; then
-          usage "Error: readme and sources are mutually exclusive options"
-          return 1
-        fi
-        ;;
-      *)
-        if [ "${opt:0:1}" == "-" ]; then
-          bpkg_error "unknown option: $opt"
-          return 1
-        fi
-        if [ "$pkg" == "" ]; then
-          pkg=$opt
-        fi
+    -h | --help)
+      usage
+      return 0
+      ;;
+    readme)
+      readme=1
+      if [ "$sources" == "1" ]; then
+        usage "Error: readme and sources are mutually exclusive options"
+        return 1
+      fi
+      ;;
+    source | sources)
+      sources=1
+      if [ "$readme" == "1" ]; then
+        usage "Error: readme and sources are mutually exclusive options"
+        return 1
+      fi
+      ;;
+    *)
+      if [ "${opt:0:1}" == "-" ]; then
+        bpkg_error "unknown option: $opt"
+        return 1
+      fi
+      if [ "$pkg" == "" ]; then
+        pkg=$opt
+      fi
+      ;;
     esac
   done
 
@@ -175,7 +183,7 @@ bpkg_show () {
     if [ ! -f "$BPKG_REMOTE_INDEX_FILE" ]; then
       bpkg_warn "no index file found for remote: ${remote}"
       bpkg_warn "You should run \`bpkg update' before running this command."
-      i=$((i+1))
+      i=$((i + 1))
       continue
     fi
 
@@ -193,10 +201,10 @@ bpkg_show () {
         IFS=$'\n'
         return 0
       fi
-    done < "$BPKG_REMOTE_INDEX_FILE"
+    done <"$BPKG_REMOTE_INDEX_FILE"
 
     IFS="$OLDIFS"
-    i=$((i+1))
+    i=$((i + 1))
   done
 
   bpkg_error "package not found: $pkg"

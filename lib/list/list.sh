@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+if ! type -f bpkg-logging &>/dev/null; then
+  echo "error: bpkg-logging not found, aborting"
+  exit 1
+else
+  # shellcheck source=lib/logging/logging.sh
+  source "$(which bpkg-logging)"
+fi
 
 if ! type -f bpkg-utils &>/dev/null; then
   echo "error: bpkg-utils not found, aborting"
@@ -10,7 +17,7 @@ fi
 
 bpkg_initrc
 
-usage () {
+usage() {
   echo "bpkg-list [-h|--help] [-d|--details]"
   echo
   echo "List all known bash packages from the repo.  You first must run \`bpkg update' to sync the repo locally."
@@ -20,22 +27,23 @@ usage () {
   echo "  --details|-d  More verbose output"
 }
 
-bpkg_list () {
+bpkg_list() {
   local verbose=0
   for opt in "${@}"; do
     case "$opt" in
-      -h|--help)
-        usage
-        return 0
-        ;;
-      -d|--details)
-        verbose=1
-        ;;
-      *)
-        if [ "${opt:0:1}" == "-" ]; then
-          bpkg_error "unknown option: $opt"
-          return 1
-        fi
+    -h | --help)
+      usage
+      return 0
+      ;;
+    -d | --details)
+      verbose=1
+      ;;
+    *)
+      if [ "${opt:0:1}" == "-" ]; then
+        bpkg_error "unknown option: $opt"
+        return 1
+      fi
+      ;;
     esac
   done
 
@@ -63,10 +71,10 @@ bpkg_list () {
       else
         echo "$name"
       fi
-    done < "${BPKG_REMOTE_INDEX_FILE}"
+    done <"${BPKG_REMOTE_INDEX_FILE}"
 
     IFS="$OLDIFS"
-    i=$((i+1))
+    i=$((i + 1))
   done
 }
 
