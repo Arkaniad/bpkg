@@ -38,7 +38,7 @@ bpkg_initrc() {
 }
 
 ## check parameter consistency
-bpkg_validate () {
+bpkg_validate() {
   if [ ${#BPKG_GIT_REMOTES[@]} -ne ${#BPKG_REMOTES[@]} ]; then
     bpkg_error "$(printf 'BPKG_GIT_REMOTES[%d] differs in size from BPKG_REMOTES[%d] array' "${#BPKG_GIT_REMOTES[@]}" "${#BPKG_REMOTES[@]}")"
     return 1
@@ -47,8 +47,8 @@ bpkg_validate () {
 }
 
 ## format and output message
-bpkg_message () {
-  if type -f bpkg-term > /dev/null 2>&1; then
+bpkg_message() {
+  if type -f bpkg-term >/dev/null 2>&1; then
     bpkg-term color "${1}"
   fi
 
@@ -56,42 +56,42 @@ bpkg_message () {
   echo -n "    ${1}"
   shift
 
-  if type -f bpkg-term > /dev/null 2>&1; then
+  if type -f bpkg-term >/dev/null 2>&1; then
     bpkg-term reset
   fi
 
   printf ": "
 
-  if type -f bpkg-term > /dev/null 2>&1; then
+  if type -f bpkg-term >/dev/null 2>&1; then
     bpkg-term reset
     bpkg-term bright
   fi
 
   printf "%s\n" "${@}"
 
-  if type -f bpkg-term > /dev/null 2>&1; then
+  if type -f bpkg-term >/dev/null 2>&1; then
     bpkg-term reset
   fi
 }
 
 ## output error
-bpkg_error () {
+bpkg_error() {
   {
     bpkg_message "red" "error" "${@}"
   } >&2
 }
 
 ## output warning
-bpkg_warn () {
+bpkg_warn() {
   {
     bpkg_message "yellow" "warn" "${@}"
   } >&2
 }
 
 ## output info
-bpkg_info () {
+bpkg_info() {
   local title="info"
-  if (( "${#}" > 1 )); then
+  if (("${#}" > 1)); then
     title="${1}"
     shift
   fi
@@ -105,7 +105,7 @@ bpkg_info () {
 ##  BPKG_OAUTH_TOKEN: token for x-oauth-basic
 ##  BPKG_CURL_AUTH_PARAM: auth arguments for raw curl requests
 ##  BPKG_REMOTE_INDEX: location of local index for remote
-bpkg_select_remote () {
+bpkg_select_remote() {
   local remote=$1
   local git_remote=$2
   export BPKG_REMOTE_HOST=$(echo "$git_remote" | sed 's/.*:\/\///' | sed 's/\/$//' | tr '/' '_')
@@ -149,6 +149,22 @@ bpkg_select_raw_path() {
   return 0
 }
 
+function bpkg_is_osx() {
+  if [[ "$(uname -a | grep "Darwin")" != "" ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+function bpkg_esed() {
+  if bpkg_is_osx; then
+    sed -E "$@"
+  else
+    sed -r "$@"
+  fi
+}
+
 export -f bpkg_initrc
 export -f bpkg_validate
 
@@ -159,3 +175,6 @@ export -f bpkg_info
 
 export -f bpkg_select_remote
 export -f bpkg_select_raw_path
+
+export -f bpkg_is_osx
+export -f bpkg_esed

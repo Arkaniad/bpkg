@@ -32,22 +32,20 @@ bpkg_getdeps() {
   if ! test -f "${pkg}"; then
     pkg="${cwd}/package.json"
     if ! test -f "${pkg}"; then
-      bpkg_error "error: Unable to find \`bpkg.json' or \`package.json' in $cwd"
+      echo 1>&2 "error: Unable to find \`bpkg.json' or \`package.json' in $cwd"
       return 1
     fi
   fi
 
   # shellcheck disable=SC2002
   dependencies=$(cat "${pkg}" | bpkg-json -b | grep '\[\"dependencies' | sed "s/\[\"dependencies\",//" | sed "s/\"\]$(printf '\t')\"/@/" | tr -d '"')
-  # shellcheck disable=SC2206
-  dependencies=(${dependencies[@]})
+  dependencies=($(echo "${dependencies[@]}"))
 
   ## run bpkg install for each dependency
   for ((i = 0; i < ${#dependencies[@]}; ++i)); do
-    (
-      local package=${dependencies[$i]}
-      bpkg install "${package}"
-    )
+    local package=${dependencies[$i]}
+
+    bpkg install "${package}"
   done
   return 0
 }

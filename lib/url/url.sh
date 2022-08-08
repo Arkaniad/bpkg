@@ -95,7 +95,7 @@ bpkg_save_remote_file() {
 }
 
 bpkg_url_exists() {
-  local auth_param exists url
+  local auth_param url exists
 
   url="${1}"
   auth_param="${2:-}"
