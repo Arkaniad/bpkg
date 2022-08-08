@@ -1,5 +1,19 @@
 #!/usr/bin/env bash
 
+if ! type -f bpkg-logging &>/dev/null; then
+  echo "error: bpkg-logging not found, aborting"
+  exit 1
+else
+  source $(which bpkg-logging)
+fi
+
+if ! type -f bpkg-logging &>/dev/null; then
+  echo "error: bpkg-logging not found, aborting"
+  exit 1
+else
+  source $(which bpkg-logging)
+fi
+
 if ! type -f bpkg-utils &>/dev/null; then
   echo "error: bpkg-utils not found, aborting"
   exit 1
